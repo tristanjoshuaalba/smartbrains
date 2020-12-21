@@ -44,6 +44,13 @@ class App extends Component {
       box: {},
       route: 'signin',
       isSignedIn: false,
+      user: {
+        id: '',
+        name: '',
+        email: '',
+        entries: 0,
+        joined: ''
+      }
     }
   }
 
@@ -74,15 +81,31 @@ class App extends Component {
     this.setState({imageURL:this.state.input})
     faceDetect.models.predict(Clarifai.FACE_DETECT_MODEL, `${this.state.input}`, { maxConcepts: 3 })
       .then(response => {
+        if (response) {
+          fetch('http://localhost:3001/image', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                id: this.state.user.id,
+                // entries: this.state.user.entries++
+          })
+        })
+        .then(response=>response.json())
+        .then(count => {
+          this.setState(Object.assign(this.state.user, {entries: count}))
+          // this.setState({user: {entries: count}})
+        })
+      }
         console.log(response.outputs[0].data.regions[0].region_info.bounding_box)
         this.displayFaceBox(this.calculateFaceLocation(response))
       })
+
       .catch(error => { console.log(error)
       });
   }
 
   onRouteChange = (route) => {
-    if(route === 'signout') {
+    if(route === 'signin') {
       this.setState({isSignedIn: false})
     } else if (route === 'home') {
       this.setState({isSignedIn: true})
@@ -93,16 +116,26 @@ class App extends Component {
     // { this.state.route === 'home' ? this.setState({route: 'signin'}) : this.setState({route: 'home'})}
   }
 
+  loadUser = (data) => {
+    this.setState({user: {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      entries: data.entries,
+      joined: data.joined
+    }})
+  }
+
   render() {
     return (
       <div className = "App">
         <Particles className = 'particles' params={particlesOptions}/>
-        <Navigation onRouteChange={this.onRouteChange} isSignedIn={this.state.isSignedIn}/>
+        <Navigation onRouteChange={this.onRouteChange} isSignedIn={this.state.isSignedIn} user={this.state.user}/>
 
         { this.state.route === 'home' 
           ? <div> 
               <Logo/>
-              <Rank/>
+              <Rank user={this.state.user}/>
               <ImageLinkForm 
                 onInputChange = {this.onInputChange}
                 onButtonSubmit = {this.onButtonSubmit}/>
@@ -112,8 +145,8 @@ class App extends Component {
           
           : (
             this.state.route === 'signin'
-            ? <Signin onRouteChange={this.onRouteChange}/>
-            : <Register/>
+            ? <Signin  loadUser = {this.loadUser} onRouteChange={this.onRouteChange} />
+            : <Register onRouteChange={this.onRouteChange} loadUser = {this.loadUser}/>
           )
       }
 
