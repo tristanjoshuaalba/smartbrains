@@ -27,7 +27,7 @@ class Register extends React.Component {
         console.log(this.state)
         // event.preventDefault();
         // this.props.onRouteChange('signin')
-        fetch('http://localhost:3001/register', {
+        fetch('https://limitless-headland-90126.herokuapp.com/register', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
